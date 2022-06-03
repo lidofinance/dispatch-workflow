@@ -1,0 +1,7 @@
+name: 'Dispatch workflow'
+description: 'Trigger workflow execution in the external repo'
+runs:
+  using: "composite"
+  steps:
+    - run: ${{ github.action_path }}/dispatch_workflow.py
+      shell: bash
