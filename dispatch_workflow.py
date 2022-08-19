@@ -137,7 +137,7 @@ def main():
     res = requests.post(
         f"{GITHUB_API_BASE}/repos/{repo}/actions/workflows/{target_workflow}/dispatches",
         headers=auth,
-        json={"ref": "master", "inputs": job_inputs},
+        json={"ref": os.getenv("DISPATCH_BRANCH", "master"), "inputs": job_inputs},
     )
     print(
         f"Dispatched workflow {target_workflow}. status={res.status_code}, text={res.text or '<no text>'}!"
