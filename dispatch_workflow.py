@@ -64,7 +64,7 @@ def wait_for_job(repo, workflow_id, auth):
             f"{GITHUB_API_BASE}/repos/{repo}/actions/workflows/{workflow_id}/runs?event=workflow_dispatch",
             headers=auth,
         ).json()["workflow_runs"]
-        print(json.dumps(workflow_runs))
+        for run in workflow_runs: print(json.dumps(run))
         if len(workflow_runs) > 0:
             last_run = workflow_runs[0]
             if last_run["status"] == "in_progress" or last_run["status"] == "queued":
