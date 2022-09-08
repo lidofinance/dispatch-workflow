@@ -4,6 +4,7 @@ import sys
 import time
 
 import jwt
+import json
 import requests
 
 # 10 mins. Timeout to wait for triggered job to be created (not finished)
@@ -63,6 +64,7 @@ def wait_for_job(repo, workflow_id, auth):
             f"{GITHUB_API_BASE}/repos/{repo}/actions/workflows/{workflow_id}/runs?event=workflow_dispatch",
             headers=auth,
         ).json()["workflow_runs"]
+        print(json.dumps(workflow_runs))
         if len(workflow_runs) > 0:
             last_run = workflow_runs[0]
             if last_run["status"] == "in_progress" or last_run["status"] == "queued":
