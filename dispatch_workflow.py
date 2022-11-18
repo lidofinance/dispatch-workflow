@@ -22,7 +22,10 @@ def make_jwt_token(private_key):
         "iss": os.environ["APP_ID"],
     }
     print("Getting app JWT...")
-    jwt_token = jwt.encode(jwt_payload, private_key, algorithm="RS256").decode()
+    try:
+        jwt_token = jwt.encode(jwt_payload, private_key, algorithm="RS256").decode()
+    except AttributeError:
+        jwt_token = jwt.encode(jwt_payload, private_key, algorithm="RS256")
     print("Got app JWT!")
     return jwt_token
 
