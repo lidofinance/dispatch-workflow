@@ -134,6 +134,10 @@ def main():
         job_inputs["repo_ref"] = target
     if target_tag:
         job_inputs["tag"] = target_tag
+        # If we have a tag, we need to use it with the repo_ref together
+        # to make sure we get the right commit and nobody not overwrites tag in the meantime
+        if "repo_ref" not in job_inputs:
+            job_inputs["repo_ref"] = os.getenv("GITHUB_SHA")
     job_inputs.update(get_inputs_from_envs())
 
     print(f"Dispatching workflow {target_workflow} with inputs {job_inputs}...")
