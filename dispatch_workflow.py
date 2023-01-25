@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+import json
 import os
 import sys
 import time
@@ -13,6 +14,21 @@ JOB_TIMEOUT = 60 * 60
 
 GITHUB_API_BASE = "https://api.github.com"
 GITHUB_UI_BASE = "https://github.com"
+
+session = requests.Session()
+
+
+def raise_for_status(response, *args, **kwargs):
+    try:
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        if 400 <= response.status_code < 500:
+            text = json.dumps(response.json(), indent=2)
+            e.args = (e.args[0] + "\n" + text, *e.args[1:])
+        raise
+
+
+session.hooks["response"].append(raise_for_status)
 
 
 def make_jwt_token(private_key):
@@ -31,7 +47,7 @@ def make_jwt_token(private_key):
 
 
 def get_installation_id(jwt_token):
-    return requests.get(
+    return session.get(
         f"{GITHUB_API_BASE}/app/installations",
         headers={"Authorization": f"Bearer {jwt_token}"},
     ).json()[0]["id"]
@@ -47,7 +63,7 @@ def workflow_link(repo, workflow_id):
 
 def prep_auth(jwt_token, installation_id):
     print("Getting bot access token...")
-    token = requests.post(
+    token = session.post(
         f"{GITHUB_API_BASE}/app/installations/{installation_id}/access_tokens",
         headers={"Authorization": f"Bearer {jwt_token}"},
     ).json()["token"]
@@ -62,7 +78,7 @@ def prep_auth(jwt_token, installation_id):
 def wait_for_job(repo, workflow_id, auth):
     start = time.time()
     while time.time() - start < JOB_WAIT_TIMEOUT:
-        workflow_runs = requests.get(
+        workflow_runs = session.get(
             f"{GITHUB_API_BASE}/repos/{repo}/actions/workflows/{workflow_id}/runs?event=workflow_dispatch",
             headers=auth,
         ).json()["workflow_runs"]
@@ -89,7 +105,7 @@ def wait_for_job(repo, workflow_id, auth):
 def wait_for_job_finish(repo, job_id, auth):
     start = time.time()
     while time.time() - start < JOB_TIMEOUT:
-        run = requests.get(
+        run = session.get(
             f"{GITHUB_API_BASE}/repos/{repo}/actions/runs/{job_id}", headers=auth
         ).json()
         if run["status"] == "completed":
@@ -136,12 +152,13 @@ def main():
         job_inputs["tag"] = target_tag
         # If we have a tag, we need to use it with the repo_ref together
         # to make sure we get the right commit and nobody not overwrites tag in the meantime
+        print("Implicitly add repo_ref to inputs")
         if "repo_ref" not in job_inputs:
             job_inputs["repo_ref"] = os.getenv("GITHUB_SHA")
     job_inputs.update(get_inputs_from_envs())
 
     print(f"Dispatching workflow {target_workflow} with inputs {job_inputs}...")
-    res = requests.post(
+    res = session.post(
         f"{GITHUB_API_BASE}/repos/{repo}/actions/workflows/{target_workflow}/dispatches",
         headers=auth,
         json={"ref": os.getenv("DISPATCH_BRANCH", "master"), "inputs": job_inputs},
