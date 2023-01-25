@@ -24,7 +24,6 @@ def raise_for_status(response, *args, **kwargs):
     except requests.exceptions.HTTPError as e:
         if 400 <= response.status_code < 500:
             text = json.dumps(response.json(), indent=2)
-            print(e.args)
             e.args = (e.args[0] + "\n" + text, *e.args[1:])
             raise
 
@@ -153,6 +152,7 @@ def main():
         job_inputs["tag"] = target_tag
         # If we have a tag, we need to use it with the repo_ref together
         # to make sure we get the right commit and nobody not overwrites tag in the meantime
+        print("Implicitly add repo_ref to inputs")
         if "repo_ref" not in job_inputs:
             job_inputs["repo_ref"] = os.getenv("GITHUB_SHA")
     job_inputs.update(get_inputs_from_envs())
