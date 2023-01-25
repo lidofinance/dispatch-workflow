@@ -25,7 +25,7 @@ def raise_for_status(response, *args, **kwargs):
         if 400 <= response.status_code < 500:
             text = json.dumps(response.json(), indent=2)
             e.args = (e.args[0] + "\n" + text, *e.args[1:])
-            raise
+        raise
 
 
 session.hooks["response"].append(raise_for_status)
