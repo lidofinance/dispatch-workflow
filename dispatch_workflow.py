@@ -79,7 +79,11 @@ def wait_for_job(repo, workflow_id, auth):
     start = time.time()
     while time.time() - start < JOB_WAIT_TIMEOUT:
         workflow_runs = session.get(
-            f"{GITHUB_API_BASE}/repos/{repo}/actions/workflows/{workflow_id}/runs?event=workflow_dispatch",
+            f"{GITHUB_API_BASE}/repos/{repo}/actions/workflows/{workflow_id}/runs",
+            params={
+                "event": "workflow_dispatch",
+                "created": ">=" + time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(start)),
+            },
             headers=auth,
         ).json()["workflow_runs"]
         if len(workflow_runs) > 0:
