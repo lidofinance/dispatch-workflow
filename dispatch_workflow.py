@@ -8,7 +8,7 @@ import jwt
 import requests
 
 # 10 mins. Timeout to wait for triggered job to be created (not finished)
-JOB_WAIT_TIMEOUT = 10 * 60
+JOB_WAIT_TIMEOUT = 1 * 60
 # 1 hour. Timeout to wait fo job to finish
 JOB_TIMEOUT = 60 * 60
 
@@ -77,6 +77,8 @@ def prep_auth(jwt_token, installation_id):
 
 def wait_for_job(repo, workflow_id, auth):
     start = time.time()
+    print(f"Start time is {start}")
+    print(f'Formatted time is {time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(start))}')
     while time.time() - start < JOB_WAIT_TIMEOUT:
         workflow_runs = session.get(
             f"{GITHUB_API_BASE}/repos/{repo}/actions/workflows/{workflow_id}/runs",
@@ -98,6 +100,15 @@ def wait_for_job(repo, workflow_id, auth):
         print(
             f"Timeout waiting for a job to appear.\nWorkflow summary - {workflow_link(repo, workflow_id)}"
         )
+        import pprint
+        runs = session.get(
+            f"{GITHUB_API_BASE}/repos/{repo}/actions/workflows/{workflow_id}/runs",
+            params={
+                "event": "workflow_dispatch",
+            },
+            headers=auth,
+        ).json()["workflow_runs"]
+        pprint.pprint(runs)
         if len(workflow_runs) > 0:
             print(
                 f"The latest job observed: {workflow_runs[0]['id']}, {workflow_runs[0]['name']}, {workflow_runs[0]['event']}, {workflow_runs[0]['status']}"
