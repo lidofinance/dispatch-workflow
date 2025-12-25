@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python3 -u
 import json
 import os
 import sys
@@ -81,7 +81,8 @@ def wait_for_job(repo, workflow_id, auth, dispatch_time):
             f"{GITHUB_API_BASE}/repos/{repo}/actions/workflows/{workflow_id}/runs",
             params={
                 "event": "workflow_dispatch",
-                "created": ">=" + time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(dispatch_time)),
+                "created": ">="
+                + time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(dispatch_time)),
             },
             headers=auth,
         ).json()["workflow_runs"]
