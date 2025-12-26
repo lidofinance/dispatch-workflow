@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python3 -u
 import json
 import os
 import sys
@@ -75,14 +75,14 @@ def prep_auth(jwt_token, installation_id):
     return auth
 
 
-def wait_for_job(repo, workflow_id, auth):
-    start = time.time()
-    while time.time() - start < JOB_WAIT_TIMEOUT:
+def wait_for_job(repo, workflow_id, auth, dispatch_time):
+    while time.time() - dispatch_time < JOB_WAIT_TIMEOUT:
         workflow_runs = session.get(
             f"{GITHUB_API_BASE}/repos/{repo}/actions/workflows/{workflow_id}/runs",
             params={
                 "event": "workflow_dispatch",
-                "created": ">=" + time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(start)),
+                "created": ">="
+                + time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(dispatch_time)),
             },
             headers=auth,
         ).json()["workflow_runs"]
@@ -162,6 +162,7 @@ def main():
     job_inputs.update(get_inputs_from_envs())
 
     print(f"Dispatching workflow {target_workflow} with inputs {job_inputs}...")
+    dispatch_time = time.time()
     res = session.post(
         f"{GITHUB_API_BASE}/repos/{repo}/actions/workflows/{target_workflow}/dispatches",
         headers=auth,
@@ -170,7 +171,7 @@ def main():
     print(
         f"Dispatched workflow {target_workflow}. status={res.status_code}, text={res.text or '<no text>'}!"
     )
-    job = wait_for_job(repo, target_workflow, auth)
+    job = wait_for_job(repo, target_workflow, auth, dispatch_time)
     wait_for_job_finish(repo, job, auth)
 
 
